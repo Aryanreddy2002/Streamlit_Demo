@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from PIL import Image
-import matplotlib.pyplot as plt
 
 st.set_page_config(page_title="Edge AI Demo", layout="wide")
 
@@ -40,13 +39,16 @@ elif demo_mode == "Fault Playback":
     time_series = pd.date_range(start="2025-06-20", periods=100, freq="T")
     temp = np.random.normal(30, 1, size=100)
     temp[70:75] += 5  # Simulated fault spike
-    anomaly_score = np.random.rand(100)
-    anomaly_score[70:75] = 0.95  # Highlight fault region
 
-    fig, ax = plt.subplots()
-    ax.plot(time_series, temp, label="Temperature (°C)")
-    ax.scatter(time_series[anomaly_score > 0.9], temp[anomaly_score > 0.9], color="red", label="Anomaly")
-    plt.xticks(rotation=45)
-    ax.legend()
-    st.pyplot(fig)
+    df = pd.DataFrame({
+        "Time": time_series,
+        "Temperature": temp,
+        "Anomaly": [1 if 70 <= i <= 74 else 0 for i in range(100)]
+    })
+
+    st.line_chart(df.set_index("Time")[["Temperature"]])
+
+    st.write("🔴 Highlighting anomalies (index 70-74)")
+    st.dataframe(df[df["Anomaly"] == 1])
+
 
