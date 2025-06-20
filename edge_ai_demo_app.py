@@ -33,22 +33,57 @@ elif demo_mode == "Doctor vs AI":
         st.write("**Label:** Mild DR")
 
 elif demo_mode == "Fault Playback":
-    st.title("🎞️ Fault Playback - Air Compressor Sensors")
-    st.write("Simulated temperature with anomaly markers")
+    st.set_page_config(page_title="Edge AI: Sensor Anomaly Dashboard", layout="wide")
 
-    time_series = pd.date_range(start="2025-06-20", periods=100, freq="T")
-    temp = np.random.normal(30, 1, size=100)
-    temp[70:75] += 5  # Simulated fault spike
+    # --- HEADER ---
+    st.markdown("<h1 style='text-align: center; color: #4E8CD9;'>🧠 Edge AI: Live Anomaly Monitoring</h1>", unsafe_allow_html=True)
+    st.markdown("### 🔧 Monitoring Air Compressor System | ⏱️ Real-Time Simulation")
+
+    # --- SIDEBAR ---
+    st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/STM32_microcontroller_logo.svg/512px-STM32_microcontroller_logo.svg.png", width=150)
+    st.sidebar.markdown("## Usecase")
+    st.sidebar.info("Anomaly Detection on sensor data from STM32 deployed AI using CNN Autoencoder.")
+
+    # --- SIMULATED DATA ---
+    np.random.seed(42)
+    time_index = pd.date_range(start="2025-06-20 10:00", periods=100, freq="T")
+    temp = np.random.normal(32, 0.5, 100)
+    pressure = np.random.normal(1.2, 0.05, 100)
+    vibration = np.random.normal(0.03, 0.01, 100)
+
+    # Inject anomaly
+    temp[60:65] += 5
+    pressure[60:65] += 0.3
+    vibration[60:65] += 0.05
 
     df = pd.DataFrame({
-        "Time": time_series,
-        "Temperature": temp,
-        "Anomaly": [1 if 70 <= i <= 74 else 0 for i in range(100)]
-    })
+        "Time": time_index,
+        "Temperature (°C)": temp,
+        "Pressure (bar)": pressure,
+        "Vibration (g)": vibration
+    }).set_index("Time")
 
-    st.line_chart(df.set_index("Time")[["Temperature"]])
+    # --- METRIC CARDS ---
+    st.markdown("### 🔍 Current Sensor Status")
 
-    st.write("🔴 Highlighting anomalies (index 70-74)")
-    st.dataframe(df[df["Anomaly"] == 1])
+    col1, col2, col3 = st.columns(3)
+    col1.metric("🌡️ Temperature", f"{temp[-1]:.2f} °C", f"{temp[-1]-temp[-2]:.2f}")
+    col2.metric("🔵 Pressure", f"{pressure[-1]:.2f} bar", f"{pressure[-1]-pressure[-2]:.2f}")
+    col3.metric("🟣 Vibration", f"{vibration[-1]:.4f} g", f"{vibration[-1]-vibration[-2]:.4f}")
 
+    # --- TABS FOR GRAPHS ---
+    tab1, tab2 = st.tabs(["📈 Sensor Trends", "🚨 Detected Anomalies"])
 
+    with tab1:
+        st.line_chart(df)
+
+    with tab2:
+        st.markdown("### 🚨 Anomaly Region Detected")
+        st.dataframe(df.iloc[60:65].style.highlight_max(axis=0, color="salmon"))
+
+    # --- FOOTER ---
+    st.markdown("---")
+    st.markdown(
+        "<p style='text-align: center; color: gray;'>Demo powered by STM32 + Advantech Linux + Edge AI | UI built with ❤️ using Streamlit</p>",
+        unsafe_allow_html=True
+    )
